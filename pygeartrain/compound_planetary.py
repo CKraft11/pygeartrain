@@ -77,7 +77,7 @@ class CompoundPlanetary(GearKinematics):
 
 @dataclass(repr=False)
 class CompoundPlanetaryGeometry(GearGeometry):
-    """"""
+    """Compound planetary with cycloidal tooth profile"""
 
     G1: Tuple[int, int, int]
     G2: Tuple[int, int, int]

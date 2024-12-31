@@ -62,7 +62,6 @@ def generate_profiles(G, b, res=500, offset=0):
     r = epi_hypo_gear(R/f, R, b, res).transform(rotation(offset / R * np.pi))
     p = epi_hypo_gear(P/f, P, b, res).transform(rotation(offset / P * np.pi))
     s = epi_hypo_gear(S/f, S, 1 - b, res).transform(rotation(-offset / S * np.pi))
-    # s = s.transform(rotation(2 * np.pi / S * ((P % 2) / 2)))
     # rotate sun gear in even toothed planet case for correct meshing
     s = s.transform(rotation(2 * np.pi / S * (((P+1) % 2) / 2)))
     return r, p, s
