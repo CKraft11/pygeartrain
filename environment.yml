@@ -1,0 +1,15 @@
+name: pygeartrain
+channels:
+  - anaconda
+  - conda-forge
+dependencies:
+  - python
+  - numpy
+  - scipy >= 1.9
+  - matplotlib
+  - sympy
+  - pytest
+  - shapely
+  - pip:
+#    - git+https://github.com/eelcohoogendoorn/numga.git
+    - git+https://github.com/eelcohoogendoorn/pycomplex.git
