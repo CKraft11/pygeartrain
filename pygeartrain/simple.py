@@ -1,9 +1,8 @@
-import numpy as np
 from sympy.core.cache import cached_property
 
 from pygeartrain.core.geometry import GearGeometry
 from pygeartrain.core.kinematics import GearKinematics
-from pygeartrain.core.profiles import epi_hypo_gear, rotation
+from pygeartrain.core.profiles import *
 
 
 class SimpleGear(GearKinematics):
@@ -63,3 +62,5 @@ class NestedGeometry(GearGeometry):
 		a, b = self.arrange(phase)
 		a.plot(ax=ax, plot_vertices=False, color='r')
 		b.plot(ax=ax, plot_vertices=False, color='b')
+
+

@@ -93,11 +93,12 @@ class GearGeometry:
         ani = animation.FuncAnimation(plt.gcf(), updatefig, interval=10, blit=False)
         plt.show()
 
-    def save_animation(self, frames, basename):
+    def save_animation(self, frames, basename, total=np.pi/2):
         import matplotlib.pyplot as plt
 
         self.plot(show=False)
         ax = plt.gca()
         for i in range(frames):
             ax.cla()
-            self.plot(ax=ax, phase=i/frames*np.pi/2, filename=f'{basename}_{i}.png', show=False)
+            phase = i/frames*total
+            self.plot(ax=ax, phase=phase, filename=f'{basename}_{i}.png', show=False)

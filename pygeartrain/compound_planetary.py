@@ -103,24 +103,14 @@ class CompoundPlanetaryGeometry(GearGeometry):
         )
 
     def arrange(self, phase):
-        r = self.ratios_f
+        r = {k:v * phase for k, v in self.ratios_f.items()}
         p1, p2 = self.generate_profiles
         return arrange(
-            p1,
-            self.G1,
-            self.N,
-            r['r1'] * phase,
-            r['p'] * phase,
-            r['s1'] * phase,
-            r['c'] * phase,
+            p1, self.G1, self.N,
+            r['r1'], r['p'], r['s1'], r['c'],
         ), arrange(
-            p2,
-            self.G2,
-            self.N,
-            r['r2'] * phase,
-            r['p'] * phase,
-            r['s2'] * phase,
-            r['c'] * phase,
+            p2, self.G2, self.N,
+            r['r2'], r['p'], r['s2'], r['c'],
         )
 
     def _plot(self, ax, phase):

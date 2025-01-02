@@ -68,6 +68,7 @@ def generate_profiles(G, b, res=500, offset=0):
 
 
 def arrange(profiles, G, N, rr, rp, rs, rc):
+    """Take generated profiles and arrange them into a planetary with the proper phase rotations"""
     rg, pg, sg = profiles
     R, P, S = G
     rg = rg.transform(rotation(rr))

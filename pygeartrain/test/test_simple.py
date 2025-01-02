@@ -15,3 +15,5 @@ def test_nested():
 	print(kinematics)
 	gear = NestedGeometry(kinematics, {'N': 4})
 	gear.animate()
+
+

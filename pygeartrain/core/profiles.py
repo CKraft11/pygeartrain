@@ -1,3 +1,4 @@
+import numpy
 import numpy as np
 
 
@@ -138,7 +139,19 @@ def buffer(complex, r):
     return ring(coords[::-1])
 
 
-def hypo_gear(R, N, b, f=1):
+def hypo_gear_offset(R, N, b, f=1):
+    """
+    References
+    ----------
+    https://www.researchgate.net/publication/303053954_Specific_Sliding_of_Trochoidal_Gearing_Profile_in_the_Gerotor_Pumps
+    """
+    # FIXME: only the f=1 gears mesh properly currently. not sure yet how to solve. correction factor to base radius seems called for
+    # complex = ring(epitrochoid(R, N, f))
+    complex = ring(hypotrochoid(R, N, f))
+    return buffer(complex, b)
+
+
+def epi_gear_offset(R, N, b, f=1):
     """
     References
     ----------
@@ -148,3 +161,17 @@ def hypo_gear(R, N, b, f=1):
     complex = ring(epitrochoid(R, N, f))
     # complex = ring(hypotrochoid(R, N, f))
     return buffer(complex, b)
+
+
+def concat(geo):
+    es = [a.topology.elements[-1] for a in geo]
+    offsets = np.cumsum([0] + [len(e) for e in es])
+    return type(geo[0])(
+        vertices=np.concatenate([a.vertices for a in geo], axis=0),
+        cubes=np.concatenate([e + o for e, o in zip(es, offsets)], axis=0)
+    )
+
+
+def make_pins(N, R, r):
+    pin = ring(sinusoid(1, 0, 0, r, n_points=100))
+    return concat([pin.translate([R, 0]).transform(rotation(i / N * 2 * np.pi)) for i in range(N)])
