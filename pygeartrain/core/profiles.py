@@ -1,4 +1,3 @@
-import numpy
 import numpy as np
 
 
@@ -46,12 +45,11 @@ def hypotrochoid(a: float, q: int, d: float):
     """
     # a = a - 0.6
     b = a / q
-    print(b)
     k = d / b
     # k = 0.6
     t = np.linspace(0, np.pi*2, 500)
-    x = b * ((q - 1) * np.cos(t) + k * np.cos((q-1)*t))
-    y = b * ((q - 1) * np.sin(t) - k * np.sin((q-1)*t))
+    # x = b * ((q - 1) * np.cos(t) + k * np.cos((q-1)*t))
+    # y = b * ((q - 1) * np.sin(t) - k * np.sin((q-1)*t))
 
     q = (a - b) / b
     x = (a + b) * np.cos(t) + d * np.cos(q*t)
@@ -86,7 +84,7 @@ def sinusoid(n_teeth: int, slope=1/10, amplitude=None, pitch_radius: float=1.0, 
 
 
 def involute(n_teeth, pressure_angle, pitch_radius):
-    """how to parametrize? offse relative to pitch circle?"""
+    """how to parametrize? offset relative to pitch circle?"""
     n_points = 10   # points per tooth
     a = np.linspace(0, np.pi * 2)
     s = np.sin(n_teeth * a)
@@ -119,6 +117,7 @@ def epi_hypo_gear(R, N, f, res):
     res: int
         number of vertices per curve-section
     """
+    # return circle(R)
     r = R / N
     t = 2*np.pi/N
     p = trochoid_part(R, r * f, +1, res=res)
@@ -139,17 +138,24 @@ def buffer(complex, r):
     return ring(coords[::-1])
 
 
-def hypo_gear_offset(R, N, b, f=1):
+def hypo_gear(R, N, f=1):
     """
     References
     ----------
     https://www.researchgate.net/publication/303053954_Specific_Sliding_of_Trochoidal_Gearing_Profile_in_the_Gerotor_Pumps
     """
-    # FIXME: only the f=1 gears mesh properly currently. not sure yet how to solve. correction factor to base radius seems called for
-    # complex = ring(epitrochoid(R, N, f))
-    complex = ring(hypotrochoid(R, N, f))
-    return buffer(complex, b)
+    return ring(hypotrochoid(R, N, f))
 
+def hypo_gear_offset(R, N, b, f=1):
+    return buffer(hypo_gear(R, N, f), b)
+
+def epi_gear(R, N, f=1):
+    """
+    References
+    ----------
+    https://www.researchgate.net/publication/303053954_Specific_Sliding_of_Trochoidal_Gearing_Profile_in_the_Gerotor_Pumps
+    """
+    return ring(epitrochoid(R, N, f))
 
 def epi_gear_offset(R, N, b, f=1):
     """
@@ -157,10 +163,7 @@ def epi_gear_offset(R, N, b, f=1):
     ----------
     https://www.researchgate.net/publication/303053954_Specific_Sliding_of_Trochoidal_Gearing_Profile_in_the_Gerotor_Pumps
     """
-    # FIXME: only the f=1 gears mesh properly currently. not sure yet how to solve. correction factor to base radius seems called for
-    complex = ring(epitrochoid(R, N, f))
-    # complex = ring(hypotrochoid(R, N, f))
-    return buffer(complex, b)
+    return buffer(epi_gear(R, N, f), b)
 
 
 def concat(geo):
@@ -173,7 +176,7 @@ def concat(geo):
 
 
 def make_pins(N, R, r):
-    pin = ring(sinusoid(1, 0, 0, r, n_points=100))
+    pin = circle(r)
     return concat([pin.translate([R, 0]).transform(rotation(i / N * 2 * np.pi)) for i in range(N)])
 
 

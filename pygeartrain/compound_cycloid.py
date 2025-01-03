@@ -57,7 +57,7 @@ class CompoundCycloidGeometry(GearGeometry):
     def arrange(self, phase):
         import numpy as np
         p1, p2 = self.generate_profiles
-        r = {k:v * phase for k,v in self.ratios_f.items()}
+        r = self.phases(phase)
         o = np.pi * self.offset
         return (
             arrange(p1, r['p'], r['r1'], r['c']),

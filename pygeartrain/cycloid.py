@@ -38,7 +38,7 @@ class CycloidGeometry(GearGeometry):
         return generate_profiles(self.P, self.f, self.b, self.cycloid)
 
     def arrange(self, phase):
-        r = {k:v * phase for k,v in self.ratios_f.items()}
+        r = self.phases(phase)
         return arrange(self.generate_profiles, r['p'], r['r'], r['c'])
 
     def _plot(self, ax, phase):

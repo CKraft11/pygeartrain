@@ -8,7 +8,7 @@ from functools import cached_property
 from typing import Tuple
 
 from pygeartrain.core.kinematics import GearKinematics
-from pygeartrain.core.geometry import GearGeometry
+from pygeartrain.core.geometry import GearGeometry, flatten
 from pygeartrain.planetary import generate_profiles, arrange
 
 
@@ -84,26 +84,28 @@ class CompoundPlanetaryGeometry(GearGeometry):
     N: int
     b1: float
     b2: float
+    show_carrier: bool
 
     @classmethod
-    def create(cls, kinematics, G1, G2, N, b1=0.5, b2=0.5):
+    def create(cls, kinematics, G1, G2, N, b1=0.5, b2=0.5, show_carrier=False):
         geometry = {**dict(zip(['R1','P1','S1'], G1)), **dict(zip(['R2', 'P2', 'S2'], G2))}
 
         return cls(
             kinematics=kinematics,
             geometry=geometry,
-            G1=G1, G2=G2, N=N, b1=b1, b2=b2
+            G1=G1, G2=G2, N=N, b1=b1, b2=b2,
+            show_carrier=show_carrier
         )
 
     @cached_property
     def generate_profiles(self, res=500):
         return (
-            generate_profiles(self.G1, self.b1, res=res),
-            generate_profiles(self.G2, self.b2, res=res, offset=0.5*self.G2[1])  # offset by half a planet tooth; works out nicer in P2=1 case
+            generate_profiles(self.G1, self.N, self.b1, res=res),
+            generate_profiles(self.G2, self.N, self.b2, res=res, offset=0.5*self.G2[1])  # offset by half a planet tooth; works out nicer in P2=1 case
         )
 
     def arrange(self, phase):
-        r = {k:v * phase for k, v in self.ratios_f.items()}
+        r = self.phases(phase)
         p1, p2 = self.generate_profiles
         return arrange(
             p1, self.G1, self.N,
@@ -115,7 +117,7 @@ class CompoundPlanetaryGeometry(GearGeometry):
 
     def _plot(self, ax, phase):
         p1, p2 = self.arrange(phase)
-        for p in p1:
+        for p in flatten(p1 if self.show_carrier else p2[:-1]):
             p.plot(ax=ax, plot_vertices=False, color='r')
-        for p in p2:
+        for p in flatten(p2 if self.show_carrier else p2[:-1]):
             p.plot(ax=ax, plot_vertices=False, color='b')

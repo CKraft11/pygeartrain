@@ -36,7 +36,7 @@ def test_compound_planetary_carrier():
 	# carrier-driven
 	kinematics = CompoundPlanetary('c', 'r2', 'r1')
 	print(kinematics)
-	gear = CompoundPlanetaryGeometry.create(kinematics, (15, 5, 5), (14, 4, 6), 5, b1=0.4, b2=0.7)
+	gear = CompoundPlanetaryGeometry.create(kinematics, (15, 5, 5), (14, 4, 6), 5, b1=0.4, b2=0.7, show_carrier=True)
 	print(gear)
 	print(gear.ratios)
 	gear.animate()
@@ -80,10 +80,10 @@ def test_compound_planetary_high():
 	# also pretty good ratio-per-teeth, with lower absolutes. also super close in absolute tooth count
 	gear = CompoundPlanetaryGeometry.create(kinematics, (37, 13, 11), (34, 12, 10), 4)
 	print(gear.ratios_f['s1'] / sum(gear.G1+gear.G2))
-	gear.save_animation(frames=40, total=.01, basename='compound')
+	# gear.save_animation(frames=40, total=.01, filename='high.gif')
 	# print(gear.ratios_f['s1'])
 	# gear.plot(show=False, filename='964.png')
-	# gear.animate()
+	gear.animate()
 
 
 def test_compound_backdrive():

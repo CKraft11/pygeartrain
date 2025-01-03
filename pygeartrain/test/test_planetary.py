@@ -1,7 +1,7 @@
 from pygeartrain.planetary import *
 
 
-def test_ratio():
+def test_planetary():
 	print()
 	# kinematics = Planetary('s', 'c', 'r')
 	# kinematics = Planetary('s', 'r', 'c')

@@ -23,11 +23,11 @@ def fig_to_array(fig):
     data = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8)
     return data.reshape((int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2])) + (3,))
 
-    # import io
-    # with io.BytesIO() as io_buf:
-    #     fig.savefig(io_buf, format='raw')
-    #     image = np.frombuffer(io_buf.getvalue(), np.uint8).reshape(int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2]), -1)
-    # return image
+def image_downsample(img, bin_size = 2):
+	ix, iy = img.shape[:2]
+	ox, oy = ix // bin_size, iy // bin_size
+	return img[:ox*bin_size, :oy*bin_size].reshape((ox, bin_size, oy, bin_size, -1)).mean(axis=(1, 3)).astype(img.dtype)
+
 
 
 @dataclass
@@ -36,18 +36,28 @@ class GearGeometry:
     geometry: Dict[str, float]  # values to stick into kinematic equations
 
     @cached_property
-    def ratio(self):
-        return self.kinematics.ratio.subs(self.geometry)
-    @cached_property
     def ratios(self):
         return {k: r.subs(self.geometry) for k, r in self.kinematics.solve.items()}
     @cached_property
     def ratios_f(self):
         return {k: float(r.evalf()) for k, r in self.ratios.items()}
+    def phases(self, phase):
+        return {k:v * phase for k,v in self.ratios_f.items()}
+    @cached_property
+    def ratio(self):
+        return self.ratios[self.kinematics.input]
+    @cached_property
+    def ratio_f(self):
+        return self.ratios_f[self.kinematics.input]
 
     def __repr__(self):
-        geo = str(self.geometry).replace("'", "").replace(" ", "")
-        return f'{self.kinematics.input}/{self.kinematics.output}: {self.kinematics.ratio} = {self.ratio} \n {geo}'
+        # geo = str(self.geometry).replace("'", "").replace(" ", "")
+        geo = ','.join(f'{k}:{v}' for k,v in self.geometry.items())
+        sym = str(self.kinematics.ratio).replace(" ", "")
+        ratio = str(self.ratio).replace(" ", "")
+        if '/' in ratio:
+            ratio = ratio + f'={self.ratio_f:.1f}'
+        return f'{self.kinematics.input}/{self.kinematics.output}={sym}={ratio}\n{geo}'
 
     @cached_property
     def generate_profiles(self):
@@ -116,7 +126,7 @@ class GearGeometry:
             ax.cla()
             phase = i/frames*total
             self.plot(ax=ax, phase=phase, show=False)
-            data.append(fig_to_array(fig))
+            data.append(image_downsample(fig_to_array(fig)))
         data = np.array(data)
         import imageio.v3 as iio
         iio.imwrite(filename, data, loop=0, fps=30)
