@@ -175,3 +175,7 @@ def concat(geo):
 def make_pins(N, R, r):
     pin = ring(sinusoid(1, 0, 0, r, n_points=100))
     return concat([pin.translate([R, 0]).transform(rotation(i / N * 2 * np.pi)) for i in range(N)])
+
+
+def circle(R, N=100):
+    return ring(sinusoid(1, 0, 0, R, n_points=N))

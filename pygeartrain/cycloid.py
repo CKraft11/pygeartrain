@@ -49,21 +49,23 @@ class CycloidGeometry(GearGeometry):
 
 
 
-def generate_profiles(P, f, b, cycloid):
+def generate_profiles(P, f, b, cycloid, offset=0, s=1, scale=1):
     R = P + 1
-    e = 1 * f
+    e = 1 * f * s
 
     if cycloid == 'epi':
-        p = epi_gear_offset(P, P, b=-b, f=f)
-        r = make_pins(R, R, b)
+        p = epi_gear_offset(P*s, P, b=-b, f=f*s)
+        r = make_pins(R, R*s, b)
     elif cycloid == 'hypo':
-        R = P+1
-        p = make_pins(P, P+2, b)
-        r = hypo_gear_offset(R, R, b=b, f=f)
+        p = make_pins(P, (P+2)*s, b)
+        r = hypo_gear_offset(R*s, R, b=b, f=f*s)
 
     # wobbler / single-tooth hypocycloid
     s = concat([make_pins(1, e, b + e), make_pins(1, 0, b)])
-    return r, p, s, e
+    p = p.transform(rotation(offset / P * np.pi)).scale(scale)
+    r = r.transform(rotation(offset / R * np.pi)).scale(scale)
+    s = s.transform(rotation(offset / 1 * np.pi)).scale(scale)
+    return r, p, s, e * scale
 
 
 def arrange(profiles, rp, rr, rc):

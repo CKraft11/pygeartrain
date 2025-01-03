@@ -38,6 +38,7 @@ def test_compound_planetary_carrier():
 	print(kinematics)
 	gear = CompoundPlanetaryGeometry.create(kinematics, (15, 5, 5), (14, 4, 6), 5, b1=0.4, b2=0.7)
 	print(gear)
+	print(gear.ratios)
 	gear.animate()
 
 

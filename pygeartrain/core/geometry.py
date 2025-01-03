@@ -16,6 +16,19 @@ def flatten(l):
         out.append(l)
     return out
 
+def fig_to_array(fig):
+    import matplotlib.pyplot as plt
+    canvas = plt.gca().figure.canvas
+    canvas.draw()
+    data = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8)
+    return data.reshape((int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2])) + (3,))
+
+    # import io
+    # with io.BytesIO() as io_buf:
+    #     fig.savefig(io_buf, format='raw')
+    #     image = np.frombuffer(io_buf.getvalue(), np.uint8).reshape(int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2]), -1)
+    # return image
+
 
 @dataclass
 class GearGeometry:
@@ -34,7 +47,7 @@ class GearGeometry:
 
     def __repr__(self):
         geo = str(self.geometry).replace("'", "").replace(" ", "")
-        return f'{self.kinematics.input}/{self.kinematics.output}: {self.ratio} + {geo}'
+        return f'{self.kinematics.input}/{self.kinematics.output}: {self.kinematics.ratio} = {self.ratio} \n {geo}'
 
     @cached_property
     def generate_profiles(self):
@@ -74,7 +87,7 @@ class GearGeometry:
         if show:
             plt.show()
 
-    def animate(self, scale=None, filename=None):
+    def animate(self, scale=None):
         import matplotlib.pyplot as plt
         import matplotlib.animation as animation
 
@@ -93,12 +106,18 @@ class GearGeometry:
         ani = animation.FuncAnimation(plt.gcf(), updatefig, interval=10, blit=False)
         plt.show()
 
-    def save_animation(self, frames, basename, total=np.pi/2):
+    def save_animation(self, frames, filename, total=np.pi/2):
         import matplotlib.pyplot as plt
-
         self.plot(show=False)
+        fig = plt.gcf()
         ax = plt.gca()
+        data = []
         for i in range(frames):
             ax.cla()
             phase = i/frames*total
-            self.plot(ax=ax, phase=phase, filename=f'{basename}_{i}.png', show=False)
+            self.plot(ax=ax, phase=phase, show=False)
+            data.append(fig_to_array(fig))
+        data = np.array(data)
+        import imageio.v3 as iio
+        iio.imwrite(filename, data, loop=0, fps=30)
+        plt.close(fig)

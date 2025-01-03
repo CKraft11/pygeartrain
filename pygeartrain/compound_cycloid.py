@@ -10,11 +10,8 @@ just having a single planet, thats scaled up all over the sun gear
 from dataclasses import dataclass
 from functools import cached_property
 
-# from examples.modelling.gear import hypo_gear_offset, epi_gear_offset
-
 from pygeartrain.core.kinematics import GearKinematics
 from pygeartrain.core.geometry import GearGeometry
-from pygeartrain.core.profiles import *
 from pygeartrain.cycloid import arrange, generate_profiles
 
 
@@ -29,12 +26,14 @@ class CompoundCycloid(GearKinematics):
         '(P2+1) * r2 - P2 * p - (1) * c',  # planet-ring contact 2
     ]
 
+
 @dataclass(repr=False)
 class CompoundCycloidGeometry(GearGeometry):
     P1: int
     P2: int
     b: float = 1.0  # bearing size
     f: float = 0.5  # cycloid depth; 1=full cycloid, 0 is circle
+    offset = True   # 180 wobbler offset
     cycloid: str ='epi'
 
     @classmethod
@@ -49,17 +48,20 @@ class CompoundCycloidGeometry(GearGeometry):
 
     @cached_property
     def generate_profiles(self):
+        s=0.5
         return (
-            generate_profiles(self.P1, self.f, self.b, self.cycloid),
-            generate_profiles(self.P2, self.f, self.b, self.cycloid),
+            generate_profiles(self.P1, self.f, self.b, self.cycloid, s=1.0),
+            generate_profiles(self.P2, self.f, self.b, self.cycloid),#, 'hypo', offset=0.5),
         )
 
     def arrange(self, phase):
+        import numpy as np
         p1, p2 = self.generate_profiles
         r = {k:v * phase for k,v in self.ratios_f.items()}
+        o = np.pi * self.offset
         return (
             arrange(p1, r['p'], r['r1'], r['c']),
-            arrange(p2, r['p'], r['r2'], r['c']),
+            arrange(p2, r['p']+o, r['r2']+o, r['c']+o),
         )
 
     def _plot(self, ax, phase):
@@ -69,3 +71,5 @@ class CompoundCycloidGeometry(GearGeometry):
         r2.plot(ax=ax, plot_vertices=False, color='b')
         p2.plot(ax=ax, plot_vertices=False, color='b')
         s1.plot(ax=ax, plot_vertices=False, color='g')
+        s2.plot(ax=ax, plot_vertices=False, color='k')
+
