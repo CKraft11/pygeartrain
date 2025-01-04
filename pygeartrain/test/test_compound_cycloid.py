@@ -18,7 +18,7 @@ def test_hypo():
 	print()
 	kinematics = CompoundCycloid('c', 'r2', 'r1')
 	print(kinematics)
-	gear = CompoundCycloidGeometry.create(kinematics, P1=6, P2=7, b=3.7, f=0.7, cycloid='hypo')
+	gear = CompoundCycloidGeometry.create(kinematics, P1=6, P2=7, b=3.5, f=0.7, cycloid='hypo')
 	# gear.save_animation(100, 'hypo.gif', total=0.3)
 	gear.animate()
 

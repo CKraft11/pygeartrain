@@ -1,12 +1,56 @@
 import numpy as np
 
+from pycomplex.complex.cubical import ComplexCubical1Euclidian2
 
-def ring(c):
-    """Encode periodic vertex list to closed cubical complex"""
-    from pycomplex.complex.cubical import ComplexCubical1Euclidian2
-    v = np.arange(len(c))
-    cubes = np.array([np.roll(v, 1), v]).T
-    return ComplexCubical1Euclidian2(vertices=c, cubes=cubes)
+from pygeartrain.core.pga import transform
+
+
+class Profile(ComplexCubical1Euclidian2):
+
+    @classmethod
+    def empty(cls):
+        return cls(
+            vertices=np.zeros((1, 2), float),
+            cubes=np.empty((0, 2), int)
+        )
+    @property
+    def limit(self):
+        try:
+            return np.max(np.linalg.norm(self.vertices, axis=1))
+        except:
+            return 0
+
+    @classmethod
+    def concat(cls, profiles):
+        es = [a.topology.elements[-1] for a in profiles]
+        offsets = np.cumsum([0] + [len(e) for e in es])
+        return cls(
+            vertices=np.concatenate([np.empty((0, 2), float)]+[a.vertices for a in profiles], axis=0),
+            cubes=np.concatenate([np.empty((0, 2), int)]+[e + o for e, o in zip(es, offsets)], axis=0)
+        )
+
+    def plot(self, *args, **kwargs):
+        return super(Profile, self).plot(*args, plot_vertices=False, **kwargs)
+
+
+    def __rshift__(self, motor):
+        return self.copy(vertices=transform(motor, self.vertices))
+    def __lshift__(self, motor):
+        return self.copy(vertices=transform(motor.reverse(), self.vertices))
+
+    @classmethod
+    def from_points(cls, p):
+
+        v = np.arange(len(p))
+        cubes = np.array([np.roll(v, 1), v]).T
+        return cls(vertices=p, cubes=cubes)
+
+
+# def ring(c):
+#     """Encode periodic vertex list to closed cubical complex"""
+#     v = np.arange(len(c))
+#     cubes = np.array([np.roll(v, 1), v]).T
+#     return ComplexCubical1Euclidian2(vertices=c, cubes=cubes)
 
 
 def rotation(a):
@@ -127,15 +171,14 @@ def epi_hypo_gear(R, N, f, res):
     # n = np.dot(n, rotation(t*f))
     u = np.concatenate([p, n], axis=0)
     c = np.concatenate([np.dot(u, rotation(t*i)) for i in range(N)], axis=0)
-    return ring(c)
+    return Profile.from_points(c)
 
 
 def buffer(complex, r):
     from shapely.geometry import Polygon
     poly = Polygon(complex.vertices).buffer(r)
     coords = np.array(poly.exterior.coords)
-    # print(len(coords))
-    return ring(coords[::-1])
+    return Profile.from_points(coords[::-1])
 
 
 def hypo_gear(R, N, f=1):
@@ -144,7 +187,7 @@ def hypo_gear(R, N, f=1):
     ----------
     https://www.researchgate.net/publication/303053954_Specific_Sliding_of_Trochoidal_Gearing_Profile_in_the_Gerotor_Pumps
     """
-    return ring(hypotrochoid(R, N, f))
+    return Profile.from_points(hypotrochoid(R, N, f))
 
 def hypo_gear_offset(R, N, b, f=1):
     return buffer(hypo_gear(R, N, f), b)
@@ -155,7 +198,7 @@ def epi_gear(R, N, f=1):
     ----------
     https://www.researchgate.net/publication/303053954_Specific_Sliding_of_Trochoidal_Gearing_Profile_in_the_Gerotor_Pumps
     """
-    return ring(epitrochoid(R, N, f))
+    return Profile.from_points(epitrochoid(R, N, f))
 
 def epi_gear_offset(R, N, b, f=1):
     """
@@ -166,19 +209,19 @@ def epi_gear_offset(R, N, b, f=1):
     return buffer(epi_gear(R, N, f), b)
 
 
-def concat(geo):
-    es = [a.topology.elements[-1] for a in geo]
-    offsets = np.cumsum([0] + [len(e) for e in es])
-    return type(geo[0])(
-        vertices=np.concatenate([a.vertices for a in geo], axis=0),
-        cubes=np.concatenate([e + o for e, o in zip(es, offsets)], axis=0)
-    )
+# def concat(geo):
+#     es = [a.topology.elements[-1] for a in geo]
+#     offsets = np.cumsum([0] + [len(e) for e in es])
+#     return type(geo[0])(
+#         vertices=np.concatenate([a.vertices for a in geo], axis=0),
+#         cubes=np.concatenate([e + o for e, o in zip(es, offsets)], axis=0)
+#     )
 
 
 def make_pins(N, R, r):
     pin = circle(r)
-    return concat([pin.translate([R, 0]).transform(rotation(i / N * 2 * np.pi)) for i in range(N)])
+    return Profile.concat([pin.translate([R, 0]).transform(rotation(i / N * 2 * np.pi)) for i in range(N)])
 
 
 def circle(R, N=100):
-    return ring(sinusoid(1, 0, 0, R, n_points=N))
+    return Profile.from_points(sinusoid(1, 0, 0, R, n_points=N))

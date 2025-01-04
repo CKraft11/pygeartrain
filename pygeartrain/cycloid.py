@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
-from sympy.core.cache import cached_property
+from functools import cached_property
 
 from pygeartrain.core.geometry import GearGeometry
 from pygeartrain.core.kinematics import GearKinematics
 from pygeartrain.core.profiles import *
-from pygeartrain.planetary import arrange
+from pygeartrain.core.pga import rotor, translator
 
 
 class Cycloid(GearKinematics):
@@ -19,62 +19,75 @@ class Cycloid(GearKinematics):
 
 @dataclass(repr=False)
 class CycloidGeometry(GearGeometry):
-    P: int
+    P: int          # number of lobes on the disc
     b: float = 1.0  # bearing size
     f: float = 0.8  # cycloid depth; 1=full cycloid, 0 is circle
     cycloid: str ='epi'
+    O: int = 0      # output pins
 
     @classmethod
-    def create(cls, kinematics, P, cycloid='epi'):
+    def create(cls, kinematics, P, cycloid='epi', O=0):
         geometry = {'P': P}
         return cls(
             kinematics=kinematics,
             geometry=geometry,
             P=P, cycloid=cycloid,
+            O=O,
         )
 
     @cached_property
     def generate_profiles(self):
-        return generate_profiles(self.P, self.f, self.b, self.cycloid)
+        return generate_profiles(self.P, self.f, self.b, self.cycloid, O=self.O)
 
     def arrange(self, phase):
         r = self.phases(phase)
         return arrange(self.generate_profiles, r['p'], r['r'], r['c'])
 
     def _plot(self, ax, phase):
-        r, p, s = self.arrange(phase)
-        p.plot(ax=ax, plot_vertices=False, color='r')
-        r.plot(ax=ax, plot_vertices=False, color='r')
-        s.plot(ax=ax, plot_vertices=False, color='g')
+        r, p, s, o = self.arrange(phase)
+        p.plot(ax=ax, color='r')
+        r.plot(ax=ax, color='r')
+        s.plot(ax=ax, color='g')
+        o.plot(ax=ax, color='k')
 
 
 
-def generate_profiles(P, f, b, cycloid, offset=0, s=1, scale=1):
+def generate_profiles(P, f, b, cycloid, offset=0, s=1, scale=1, O=0):
     R = P + 1
     e = 1 * f * s
 
     if cycloid == 'epi':
         p = epi_gear_offset(P*s, P, b=-b, f=f*s)
+        # carrier output pin holes
+        p = Profile.concat([p, make_pins(O, R*s/2, b*s)])
         r = make_pins(R, R*s, b)
     elif cycloid == 'hypo':
         p = make_pins(P, (P+2)*s, b)
         r = hypo_gear_offset(R*s, R, b=b, f=f*s)
 
+    if O:
+        o = make_pins(O, R*s/2, (b+e)*s)  # carrier output pins
+        o = Profile.concat([o, hypo_gear(R * s*0.6, O, 0.5)])
+    else:
+        o = Profile.empty()
     # wobbler / single-tooth hypocycloid
-    s = concat([make_pins(1, e, b + e), make_pins(1, 0, b)])
-    p = p.transform(rotation(offset / P * np.pi)).scale(scale)
-    r = r.transform(rotation(offset / R * np.pi)).scale(scale)
-    s = s.transform(rotation(offset / 1 * np.pi)).scale(scale)
-    return r, p, s, e * scale
+    s = Profile.concat([make_pins(1, e, b + e), make_pins(1, 0, b)])
+
+    o = o.scale(scale) >> rotor(offset / P * np.pi)
+    p = p.scale(scale) >> rotor(offset / P * np.pi)
+    r = r.scale(scale) >> rotor(offset / R * np.pi)
+    s = s.scale(scale) >> rotor(offset / 1 * np.pi)
+    return r, p, s, o, e * scale
 
 
 def arrange(profiles, rp, rr, rc):
-    r, p, s, e = profiles
+    r, p, s, o, e = profiles
 
-    p = p.transform(rotation(rp))
-    r = r.transform(rotation(rr))
-    s = s.transform(rotation(rc))
-    # carrier transform
-    p = p.transform(rotation(-rc)).translate([e, 0]).transform(rotation(rc))
+    o = o >> rotor(rp)
+    r = r >> rotor(rr)
+    s = s >> rotor(rc)
+    # combined p and c transform
+    m = (rotor(rc) >> translator(e, 0)) * rotor(rp)
+    p = p >> m
 
-    return r, p, s
+    return r, p, s, o

@@ -28,6 +28,10 @@ def image_downsample(img, bin_size = 2):
 	ox, oy = ix // bin_size, iy // bin_size
 	return img[:ox*bin_size, :oy*bin_size].reshape((ox, bin_size, oy, bin_size, -1)).mean(axis=(1, 3)).astype(img.dtype)
 
+def quantize_lower(img, s):
+    m = np.bitwise_not((2 ** s) - 1).astype(np.uint8)
+    o = np.uint8(2 ** (s-1))
+    return np.bitwise_and(img, m) + o
 
 
 @dataclass
@@ -51,7 +55,6 @@ class GearGeometry:
         return self.ratios_f[self.kinematics.input]
 
     def __repr__(self):
-        # geo = str(self.geometry).replace("'", "").replace(" ", "")
         geo = ','.join(f'{k}:{v}' for k,v in self.geometry.items())
         sym = str(self.kinematics.ratio).replace(" ", "")
         ratio = str(self.ratio).replace(" ", "")
@@ -72,7 +75,7 @@ class GearGeometry:
     def limit(self):
         """For fixing plot bounds"""
         profiles = flatten(self.arrange(0))
-        return max(np.max(np.linalg.norm(p.vertices, axis=1)) for p in profiles)*1.05
+        return max(p.limit for p in profiles)*1.05
 
     def _plot(self, phase, ax, **kwargs):
         """Plotting"""
@@ -87,11 +90,11 @@ class GearGeometry:
 
         self._plot(phase=phase, ax=ax, **kwargs)
 
+        plt.title(str(self))
+        plt.axis('off')
         lim = self.limit
         plt.xlim(-lim, +lim)
         plt.ylim(-lim, +lim)
-        plt.title(str(self))
-        plt.axis('off')
         if filename:
             fig.savefig(filename)
         if show:
@@ -126,8 +129,13 @@ class GearGeometry:
             ax.cla()
             phase = i/frames*total
             self.plot(ax=ax, phase=phase, show=False)
-            data.append(image_downsample(fig_to_array(fig)))
+            data.append(image_downsample(fig_to_array(fig), bin_size=3))
         data = np.array(data)
+        data = quantize_lower(data, 4)
+        # from PIL import Image
+        # img = Image.fromarray(data.reshape(-1, data.shape[-2], data.shape[-1]))
+        # img = img.quantize(colors=32).convert(mode='RGB')
+        # data = np.array(img).reshape(data.shape)
         import imageio.v3 as iio
         iio.imwrite(filename, data, loop=0, fps=30)
         plt.close(fig)

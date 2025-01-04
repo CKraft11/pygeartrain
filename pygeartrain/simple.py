@@ -3,6 +3,7 @@ from sympy.core.cache import cached_property
 from pygeartrain.core.geometry import GearGeometry
 from pygeartrain.core.kinematics import GearKinematics
 from pygeartrain.core.profiles import *
+from pygeartrain.core.pga import rotor, translator
 
 
 class SimpleGear(GearKinematics):
@@ -19,21 +20,21 @@ class SimpleGeometry(GearGeometry):
 
 		a = epi_hypo_gear(A, A, b, N)
 		b = epi_hypo_gear(B, B, 1-b, N)
-		# return a, b.transform(rotation(2 * np.pi / B * (B%2) / 2))
-		return a, b.transform(rotation(2 * np.pi / B * ((B+1)%2) / 2))
+		return a, b >> rotor(2 * np.pi / B * ((B+1)%2) / 2)
 
 	def arrange(self, phase):
 		a, b = self.generate_profiles
 		A = self.geometry['A']
 		B = self.geometry['B']
-		a = a.transform(rotation(phase * self.ratios_f['a']))
-		b = b.transform(rotation(phase * self.ratios_f['b']))
-		return a.translate([-A, 0]), b.translate([B, 0])
+		r = self.phases(phase)
+		ma = translator(-A, 0) * rotor(r['a'])
+		mb = translator(+B, 0) * rotor(r['b'])
+		return a >> ma, b >> mb
 
 	def _plot(self, phase, ax):
 		a, b = self.arrange(phase)
-		a.plot(ax=ax, plot_vertices=False, color='r')
-		b.plot(ax=ax, plot_vertices=False, color='b')
+		a.plot(ax=ax, color='r')
+		b.plot(ax=ax, color='b')
 
 
 
@@ -54,13 +55,14 @@ class NestedGeometry(GearGeometry):
 
 	def arrange(self, phase):
 		a, b = self.generate_profiles
-		a = a.transform(rotation(phase * self.ratios_f['a']))
-		b = b.transform(rotation(phase * self.ratios_f['b']))
-		return a.translate([1, 0]), b
+		r = self.phases(phase)
+		ma = translator(1, 0) * rotor(r['a'])
+		mb = translator(0, 0) * rotor(r['b'])
+		return a >> ma, b >> mb
 
 	def _plot(self, phase, ax):
 		a, b = self.arrange(phase)
-		a.plot(ax=ax, plot_vertices=False, color='r')
-		b.plot(ax=ax, plot_vertices=False, color='b')
+		a.plot(ax=ax, color='r')
+		b.plot(ax=ax, color='b')
 
 

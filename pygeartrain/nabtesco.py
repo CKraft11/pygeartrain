@@ -5,13 +5,13 @@ It has a single cycloidal outer ring, but is driven by a sun gear
 from dataclasses import dataclass
 from functools import cached_property
 
-from sympy import Tuple
+from typing import Tuple
 
 from pygeartrain.core.kinematics import GearKinematics
 from pygeartrain.core.geometry import GearGeometry, flatten
 from pygeartrain import cycloid
 from pygeartrain import planetary
-from pygeartrain.core.profiles import concat
+from pygeartrain.core.profiles import Profile
 
 
 class NabtescoKinematics(GearKinematics):
@@ -34,7 +34,7 @@ class NabtescoGeometry(GearGeometry):
     L: int
     S: int
     W: int
-    G: Tuple
+    G: Tuple[int, int, int]
     b: float = 1.0  # pin size
     f: float = 0.5  # cycloid depth; 1=full cycloid, 0 is circle
     N: int = 3 		# number of wobblers
@@ -46,7 +46,7 @@ class NabtescoGeometry(GearGeometry):
             kinematics=kinematics,
             geometry=geometry,
             b=b, f=f, **geometry,
-            G = (S+W*2, W, S),
+            G=(S+W*2, W, S),
             N=N,
         )
 
@@ -56,13 +56,13 @@ class NabtescoGeometry(GearGeometry):
         scale=1.9
         b2 = 2.0
         C = cycloid.generate_profiles(self.L, self.f, self.b, cycloid='epi', scale=scale / self.L)
-        r, p, s, e = C
-        p = concat([p, cycloid.make_pins(self.N, 1, b2*(self.b / self.L + 0*e) * scale)])   # add bearing holes into disc
-        C = r, p, s, e
+        r, p, s, o, e = C
+        p = Profile.concat([p, cycloid.make_pins(self.N, 1, b2*(self.b / self.L + 0*e) * scale)])   # add bearing holes into disc
+        C = r, p, s, o, e
 
-        P = planetary.generate_profiles(self.G, self.N, 0.5)
+        P = planetary.generate_profiles((1,)+self.G[1:], self.N, 0.5)
         r, p, s, c = P
-        p = concat([p, planetary.circle((self.b / self.L + e*0)*b2)]) # add wobbler bearing onto planets
+        p = Profile.concat([p, planetary.circle((self.b / self.L + e*0)*b2)]) # add wobbler bearing onto planets
         P = r, p, s, c
 
         return C, P
@@ -77,7 +77,7 @@ class NabtescoGeometry(GearGeometry):
 
     def _plot(self, ax, phase):
         C, P = self.arrange(phase)
-        for c in C[:-1]:    # skip default cycloid wobbler
-            c.plot(ax=ax, plot_vertices=False, color='r')
+        for c in C[:-2]:    # skip default cycloid wobbler and carrier
+            c.plot(ax=ax, color='r')
         for p in flatten(P[1:]):    # skip default planet ring gear
-            p.plot(ax=ax, plot_vertices=False, color='b')
+            p.plot(ax=ax, color='b')

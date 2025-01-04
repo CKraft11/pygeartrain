@@ -9,10 +9,11 @@ just having a single planet, thats scaled up all over the sun gear
 """
 from dataclasses import dataclass
 from functools import cached_property
+import numpy as np
 
 from pygeartrain.core.kinematics import GearKinematics
 from pygeartrain.core.geometry import GearGeometry
-from pygeartrain.cycloid import arrange, generate_profiles
+from pygeartrain import cycloid
 
 
 class CompoundCycloid(GearKinematics):
@@ -50,26 +51,24 @@ class CompoundCycloidGeometry(GearGeometry):
     def generate_profiles(self):
         s=0.5
         return (
-            generate_profiles(self.P1, self.f, self.b, self.cycloid, s=1.0),
-            generate_profiles(self.P2, self.f, self.b, self.cycloid),#, 'hypo', offset=0.5),
+            cycloid.generate_profiles(self.P1, self.f, self.b, self.cycloid, s=1.0),
+            cycloid.generate_profiles(self.P2, self.f, self.b, self.cycloid),#, 'hypo', offset=0.5),
         )
 
     def arrange(self, phase):
-        import numpy as np
         p1, p2 = self.generate_profiles
         r = self.phases(phase)
         o = np.pi * self.offset
         return (
-            arrange(p1, r['p'], r['r1'], r['c']),
-            arrange(p2, r['p']+o, r['r2']+o, r['c']+o),
+            cycloid.arrange(p1, r['p'], r['r1'], r['c']),
+            cycloid.arrange(p2, r['p']+o, r['r2']+o, r['c']+o),
         )
 
     def _plot(self, ax, phase):
-        (r1, p1, s1), (r2, p2, s2) = self.arrange(phase)
-        r1.plot(ax=ax, plot_vertices=False, color='r')
-        p1.plot(ax=ax, plot_vertices=False, color='r')
-        r2.plot(ax=ax, plot_vertices=False, color='b')
-        p2.plot(ax=ax, plot_vertices=False, color='b')
-        s1.plot(ax=ax, plot_vertices=False, color='g')
-        s2.plot(ax=ax, plot_vertices=False, color='k')
-
+        (r1, p1, s1, c1), (r2, p2, s2, c2) = self.arrange(phase)
+        r1.plot(ax=ax, color='r')
+        p1.plot(ax=ax, color='r')
+        r2.plot(ax=ax, color='b')
+        p2.plot(ax=ax, color='b')
+        s1.plot(ax=ax, color='g')
+        s2.plot(ax=ax, color='g')

@@ -12,5 +12,5 @@ dependencies:
   - shapely
   - imageio
   - pip:
-#    - git+https://github.com/eelcohoogendoorn/numga.git
+    - git+https://github.com/eelcohoogendoorn/numga.git
     - git+https://github.com/eelcohoogendoorn/pycomplex.git

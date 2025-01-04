@@ -5,6 +5,7 @@ from typing import Tuple
 from pygeartrain.core.geometry import GearGeometry, flatten
 from pygeartrain.core.kinematics import GearKinematics
 from pygeartrain.core.profiles import *
+from pygeartrain.core.pga import rotor, translator
 
 
 class Planetary(GearKinematics):
@@ -35,7 +36,7 @@ class PlanetaryGeometry(GearGeometry):
 
     @cached_property
     def generate_profiles(self, res=500):
-        return generate_profiles(self.G, self.N, self.b, res=res)
+        return generate_profiles(self.G, self.N, self.b, res=res, show_carrier=True)
 
     def arrange(self, phase):
         r = self.phases(phase)
@@ -46,20 +47,25 @@ class PlanetaryGeometry(GearGeometry):
 
     def _plot(self, ax, phase, col='b'):
         for profile in flatten(self.arrange(phase)):
-            profile.plot(ax=ax, plot_vertices=False, color=col)
+            profile.plot(ax=ax, color=col)
 
 
 # broken out as free functions for reusability in compound planetary
-def generate_profiles(G, N, b, res=500, offset=0, scale=1):
+def generate_profiles(G, N, b, res=500, offset=0, scale=1, show_carrier=False):
     R,P,S = G
     # scale planetaries to unit circle
     f = (S + P) / scale
-    r = epi_hypo_gear(R/f, R, b, res).transform(rotation(offset / R * np.pi))
-    p = epi_hypo_gear(P/f, P, b, res).transform(rotation(offset / P * np.pi))
-    s = epi_hypo_gear(S/f, S, 1 - b, res).transform(rotation(-offset / S * np.pi))
-    c = hypo_gear(N, N, f=0.5).scale(1/N)
+
+    r = epi_hypo_gear(R/f, R, b, res) >> rotor(offset / R * np.pi)
+    p = epi_hypo_gear(P/f, P, b, res) >> rotor(offset / P * np.pi)
+    s = epi_hypo_gear(S/f, S, 1 - b, res) >> rotor(-offset / S * np.pi)
+    # optional carrier visualization
+    if show_carrier:
+        c = hypo_gear(N, N, f=0.5).scale(1/N)
+    else:
+        c = Profile.empty()
     # rotate sun gear in even toothed planet case for correct meshing
-    s = s.transform(rotation(2 * np.pi / S * (((P+1) % 2) / 2)))
+    s = s >> rotor(np.pi / S * (((P+1) % 2)))
     return r, p, s, c
 
 
@@ -67,15 +73,16 @@ def arrange(profiles, G, N, rr, rp, rs, rc):
     """Take generated profiles and arrange them into a planetary with the proper phase rotations"""
     rg, pg, sg, cg = profiles
     R, P, S = G
-    rg = rg.transform(rotation(rr))
-    pg = pg.transform(rotation(rp))
-    sg = sg.transform(rotation(rs))
-    cg = cg.transform(rotation(rc))
-    # expand single planet into full ring of n
-    pgs = []
-    for i in range(N):
-        sa = 2 * np.pi * i / N
-        pa = sa / P * R
-        pgs.append(pg.transform(rotation(-pa - rc)).translate([1, 0]).transform(rotation(sa + rc)))
+    rg = rg >> rotor(rr)
+    pg = pg >> rotor(rp)
+    sg = sg >> rotor(rs)
+    cg = cg >> rotor(rc)
+
+    # expand single planet into full ring of N
+    def motor(i):
+        a = 2 * np.pi * i / N   # rotation needed for placement along carrier
+        w = (1-R/P) * a         # rotation needed to maintain meshing along carrier
+        return (rotor(rc+a) >> translator(1, 0)) * rotor(w)
+    pgs = [pg >> motor(i) for i in range(N)]
 
     return rg, pgs, sg, cg

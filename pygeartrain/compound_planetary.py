@@ -9,7 +9,7 @@ from typing import Tuple
 
 from pygeartrain.core.kinematics import GearKinematics
 from pygeartrain.core.geometry import GearGeometry, flatten
-from pygeartrain.planetary import generate_profiles, arrange
+from pygeartrain import planetary
 
 
 class CompoundPlanetary(GearKinematics):
@@ -100,24 +100,26 @@ class CompoundPlanetaryGeometry(GearGeometry):
     @cached_property
     def generate_profiles(self, res=500):
         return (
-            generate_profiles(self.G1, self.N, self.b1, res=res),
-            generate_profiles(self.G2, self.N, self.b2, res=res, offset=0.5*self.G2[1])  # offset by half a planet tooth; works out nicer in P2=1 case
+            planetary.generate_profiles(self.G1, self.N, self.b1, res=res, show_carrier=self.show_carrier),
+            # offset by half a planet tooth; works out nicer in P2=1 case
+            planetary.generate_profiles(self.G2, self.N, self.b2, res=res, show_carrier=self.show_carrier,
+                                        offset=0.5*self.G2[1])
         )
 
     def arrange(self, phase):
         r = self.phases(phase)
         p1, p2 = self.generate_profiles
-        return arrange(
+        return planetary.arrange(
             p1, self.G1, self.N,
             r['r1'], r['p'], r['s1'], r['c'],
-        ), arrange(
+        ), planetary.arrange(
             p2, self.G2, self.N,
             r['r2'], r['p'], r['s2'], r['c'],
         )
 
     def _plot(self, ax, phase):
         p1, p2 = self.arrange(phase)
-        for p in flatten(p1 if self.show_carrier else p2[:-1]):
-            p.plot(ax=ax, plot_vertices=False, color='r')
-        for p in flatten(p2 if self.show_carrier else p2[:-1]):
-            p.plot(ax=ax, plot_vertices=False, color='b')
+        for p in flatten(p1):
+            p.plot(ax=ax, color='r')
+        for p in flatten(p2):
+            p.plot(ax=ax, color='b')

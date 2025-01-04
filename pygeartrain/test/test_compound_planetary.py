@@ -75,7 +75,8 @@ def test_compound_planetary_high():
 	print(kinematics)
 	gear = CompoundPlanetaryGeometry.create(kinematics, (55, 21, 13), (42, 16, 10), 4, b1=0.55, b2=0.45)
 	print(gear.ratios_f['s1'] / sum(gear.G1+gear.G2))	# this 14 is really extreme; usually its close to 1.
-	# gear.animate()
+	# gear.save_animation(150, '2307.gif', 0.02)
+	gear.animate()
 	# gear.plot(show=False, filename='2307.png')
 	# also pretty good ratio-per-teeth, with lower absolutes. also super close in absolute tooth count
 	gear = CompoundPlanetaryGeometry.create(kinematics, (37, 13, 11), (34, 12, 10), 4)
@@ -111,7 +112,7 @@ def test_readme_animation():
 	kinematics = CompoundPlanetary('s1', 'r2', 'r1')
 	print(kinematics)
 	gear = CompoundPlanetaryGeometry.create(kinematics, (5, 2, 1), (4, 1, 2), 3, b1=0.25, b2=0.75)
-	gear.save_animation(frames=40, basename='compound')
+	gear.save_animation(frames=100, filename='compound.gif')
 
 
 def test_readme():
@@ -124,6 +125,7 @@ def test_gdfw():
 	kinematics = CompoundPlanetary('s1', 'r2', 'r1')
 	# geardownforwhat cf record holder; looking rather good now that upping the tooth count
 	gear = CompoundPlanetaryGeometry.create(kinematics, (56, 11, 34), (50, 10, 30), 10, 0.4, 0.4)
+	# gear.save_animation(frames=150, filename='gdfw.gif', total=0.05)
 	gear.animate()
 	# this one seems strictly superior; same proprtions and gear ratio, but more printable and harder to skip teeth
 	gear = CompoundPlanetaryGeometry.create(kinematics, (43, 8, 27), (37, 7, 23), 10, 0.4, 0.4)
