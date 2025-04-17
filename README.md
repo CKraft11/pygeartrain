@@ -17,20 +17,20 @@ Python library for gear train calculations, visualizations, optimizations, and C
 
 Some examples of currently implemented gear trains:
 
-**Compound Planetary (High Ratio)**
-![alt text](compound_planetary.gif "Compound Planetary (High Ratio)")
+**Compound Planetary (High Ratio)**<br />
+![alt text](compound_planetary.gif "Compound Planetary (High Ratio)")<br />
 `./compound_planetary.gif`
 
-**Compound Planetary (Printable Low Count)**
-![alt text](compound_planetary.png "Compound Planetary (Printable Low Count)")
+**Compound Planetary (Printable Low Count)**<br />
+![alt text](compound_planetary.png "Compound Planetary (Printable Low Count)")<br />
 `./compound_planetary.png`
 
-**Angular Contact Drive**
-![alt text](angular_contact.png "Angular Contact Drive")
+**Angular Contact Drive**<br />
+![alt text](angular_contact.png "Angular Contact Drive")<br />
 `./angular_contact.png`
 
-**Cycloidal Drive**
-![alt text](cycloid.png "Cycloidal Drive")
+**Cycloidal Drive**<br />
+![alt text](cycloid.png "Cycloidal Drive")<br />
 `./cycloid.png`
 
 ## Installation & Environment Setup
@@ -130,11 +130,11 @@ A script is provided (let's assume you saved the one we developed as `generate_p
    *  Click point in reference geometry and select one of the imported curves (do this for all 3 curves)
    *  Create a 3D sketch with two lines between the 3 points you just added in order to create a loft guide. You shoud have something looking like this.
    ![alt text](solidworks_loft_setup.png "Solidworks Loft Setup")
-   *  Create the gear body using **Insert > Boss/Base > Loft** (or **Insert > Surface > Loft**).
-   *  Check the loft connectors in the PropertyManager to ensure they connect corresponding points smoothly between the three profiles. Adjust if necessary. Click **OK**.
-   *  Repeat steps b-e for the Sun and Planet gears using their respective curve files.
+   *  Create the gear body by creating two lofts separatly for either side using **Insert > Boss/Base > Loft** (or **Insert > Surface > Loft**). Use the 3D sketch as a guide for both of them.
+   ![alt text](solidworks_loft.png "Solidworks Loft Setup")
+   *  Repeat steps for the Sun and Planet gears using their respective curve files.
    *  **For the Planet:** After creating the single lofted planet gear body, use the **Circular Pattern** feature (**Insert > Pattern/Mirror > Circular Pattern**) to create `N_planets` instances around the part origin.
-   *  **Carrier Path (Optional):** Import `carrier_path.txt` onto a sketch on the Front Plane (Z=0) using **Insert > Curve > Curve Through XYZ Points**. This circle can be used as a construction reference for designing the physical carrier or for assembly mates.
+   *  **Carrier Path (Optional):** Import `carrier_path.txt` onto a sketch on the Front Plane (Z=0) using **Insert > Curve > Curve Through XYZ Points**. This doesnt create a perfect circle so you can create a circle on the XY plane and set it to have a point coincident to the carrier path curve. This circle can be used as a construction reference for designing the physical carrier or for assembly mates.
 
 ## Animation
 
