@@ -36,7 +36,7 @@ class PlanetaryGeometry(GearGeometry):
 
     @cached_property
     def generate_profiles(self, res=500):
-        return generate_profiles(self.G, self.N, self.b, res=res, show_carrier=True)
+        return generate_profiles(self.G, self.N, self.b, res=res, show_carrier=False)
 
     def arrange(self, phase):
         r = self.phases(phase)
