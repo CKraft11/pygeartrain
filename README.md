@@ -77,7 +77,7 @@ print(kinematics)
 
 ## Advanced Usage: Generating CAD Profiles for SolidWorks
 
-A script is provided (let's assume you saved the one we developed as `generate_planetary_cad.py` in the main project directory) to export scaled helical or herringbone planetary gear profiles suitable for lofting in SolidWorks.
+Right now I've made `generate_planetary_cad.py` which only works for planetary gears. Generating the other gear types shouldn't be too hard following this script.
 
 **1. Configuration:**
 
