@@ -79,31 +79,34 @@ helix_angle_rad = math.radians(HELIX_ANGLE_DEGREES)
 # Use tangent for calculations
 base_tan_helix_angle = math.tan(helix_angle_rad)
 
-# --- Function definitions (apply_twist, save_curve_to_file, save_gear_profiles) ---
-# ... (insert the exact functions from the previous herringbone/helix answer here) ...
-# --- Function to apply twist and return 3D points (Updated) ---
-def apply_twist(xy_points, z_offset, tan_helix_for_gear, is_herringbone):
-    """Applies helix or herringbone twist to 2D points for a given Z offset."""
-    twisted_points_3d = []
+# --- Function to apply RIGID twist and return 3D points (Updated Logic) ---
+def apply_rigid_twist(xy_points, z_offset, tan_helix_for_gear, is_herringbone, scaled_reference_radius):
+    """Applies a RIGID rotation based on the twist at a reference radius."""
+    rotated_points_3d = []
+
+    # Determine the effective Z for twist direction calculation
     z_for_twist_calc = z_offset
     if is_herringbone:
-         z_for_twist_calc = abs(z_offset)
-    if abs(z_offset) < SMALL_RADIUS_TOLERANCE:
-         for x, y in xy_points:
-            twisted_points_3d.append([x, y, z_offset])
-         return np.array(twisted_points_3d)
+        z_for_twist_calc = abs(z_offset)
+
+    # Calculate the single twist angle based on the reference radius
+    if abs(z_offset) < SMALL_RADIUS_TOLERANCE or abs(tan_helix_for_gear) < 1e-12 or scaled_reference_radius < SMALL_RADIUS_TOLERANCE:
+        # No twist if z=0, helix=0, or reference radius is too small
+        twist_angle = 0.0
+    else:
+        twist_angle = (z_for_twist_calc * tan_helix_for_gear) / scaled_reference_radius
+
+    # Pre-calculate sin and cos for this single angle
+    cos_twist = math.cos(twist_angle)
+    sin_twist = math.sin(twist_angle)
+
+    # Apply the same rotation to all points
     for x, y in xy_points:
-        radius = math.sqrt(x**2 + y**2)
-        if radius < SMALL_RADIUS_TOLERANCE:
-            x_new, y_new = x, y
-        else:
-            twist_angle = (z_for_twist_calc * tan_helix_for_gear) / radius
-            cos_twist = math.cos(twist_angle)
-            sin_twist = math.sin(twist_angle)
-            x_new = x * cos_twist - y * sin_twist
-            y_new = x * sin_twist + y * cos_twist
-        twisted_points_3d.append([x_new, y_new, z_offset])
-    return np.array(twisted_points_3d)
+        x_new = x * cos_twist - y * sin_twist
+        y_new = x * sin_twist + y * cos_twist
+        rotated_points_3d.append([x_new, y_new, z_offset]) # Use original z_offset
+
+    return np.array(rotated_points_3d)
 
 # --- Function to filter, ensure closure, and save ---
 def save_curve_to_file(points_3d, filepath):
@@ -120,22 +123,33 @@ def save_curve_to_file(points_3d, filepath):
     np.savetxt(filepath, points_3d, fmt='%.8f', delimiter=' ')
     print(f"Exported curve ({len(points_3d)} points) to: {filepath}")
 
-# --- Function to process and save profiles for one gear (Updated) ---
+# --- Function to process and save profiles for one gear (Updated to use rigid twist) ---
 def save_gear_profiles(profile, gear_name, tooth_count, scale_factor, thickness, base_tan_helix, gear_type):
-    """Generates and saves the three curves (z=0, z=+t/2, z=-t/2) for a gear,
-       handling helix/herringbone and meshing direction."""
+    """Generates and saves the three RIGIDLY ROTATED curves for a gear."""
     if profile is None or len(profile.vertices) < 3:
         print(f"Warning: Not enough base vertices for {gear_name}. Skipping export.")
         return
-    print(f"\nProcessing {gear_name} ({tooth_count} teeth) as {gear_type}...")
+
+    print(f"\nProcessing {gear_name} ({tooth_count} teeth) as {gear_type} (Rigid Rotation)...") # Indicate rigid rotation
+
+    # Determine Helix Hand/Direction
     if gear_name == 'sun':
         tan_helix_for_gear = base_tan_helix
-        print(f"  - Using base helix direction (tan={tan_helix_for_gear:.4f})")
     else: # planet or ring
         tan_helix_for_gear = -base_tan_helix
-        print(f"  - Using opposite helix direction (tan={tan_helix_for_gear:.4f})")
     is_herringbone_flag = (gear_type.lower() == 'herringbone')
+    print(f"  - Using tan(helix) for gear: {tan_helix_for_gear:.4f}")
+
+    # Scale the base profile
     vertices_2d_scaled = profile.vertices * scale_factor
+
+    # --- Calculate the reference radius for THIS gear's scaled profile ---
+    # Using the maximum radius of the scaled profile points
+    radii_scaled = np.linalg.norm(vertices_2d_scaled, axis=1)
+    scaled_max_radius_for_gear = np.max(radii_scaled)
+    print(f"  - Scaled Max Radius (Reference for Twist): {scaled_max_radius_for_gear:.4f}")
+
+    # Filter consecutive close points *on the scaled 2D profile*
     filtered_points_2d = [vertices_2d_scaled[0]]
     for i in range(len(vertices_2d_scaled) - 1):
         point_current = filtered_points_2d[-1]
@@ -148,17 +162,25 @@ def save_gear_profiles(profile, gear_name, tooth_count, scale_factor, thickness,
     if len(filtered_points_2d) < 3:
          print(f"Warning: Not enough vertices after filtering for {gear_name}. Skipping export.")
          return
+
+    # Define Z offsets
     z0 = 0.0
     z_pos = thickness / 2.0
     z_neg = -thickness / 2.0
-    points_z0 = apply_twist(filtered_points_2d, z0, tan_helix_for_gear, is_herringbone_flag)
-    points_z_pos = apply_twist(filtered_points_2d, z_pos, tan_helix_for_gear, is_herringbone_flag)
-    points_z_neg = apply_twist(filtered_points_2d, z_neg, tan_helix_for_gear, is_herringbone_flag)
+
+    # Generate points for each Z level using the RIGID rotation logic
+    points_z0 = apply_rigid_twist(filtered_points_2d, z0, tan_helix_for_gear, is_herringbone_flag, scaled_max_radius_for_gear)
+    points_z_pos = apply_rigid_twist(filtered_points_2d, z_pos, tan_helix_for_gear, is_herringbone_flag, scaled_max_radius_for_gear)
+    points_z_neg = apply_rigid_twist(filtered_points_2d, z_neg, tan_helix_for_gear, is_herringbone_flag, scaled_max_radius_for_gear)
+
+    # Define filenames
     base_filename = f"{gear_name}_{tooth_count}"
     filepath_z0 = os.path.join(output_dir, f"{base_filename}_z0.txt")
     filepath_z_pos = os.path.join(output_dir, f"{base_filename}_z_pos.txt")
     filepath_z_neg = os.path.join(output_dir, f"{base_filename}_z_neg.txt")
-    save_curve_to_file(points_z0, filepath_z0)
+
+    # Save each curve, ensuring closure
+    save_curve_to_file(points_z0, filepath_z0)       # save_curve_to_file remains the same
     save_curve_to_file(points_z_pos, filepath_z_pos)
     save_curve_to_file(points_z_neg, filepath_z_neg)
 

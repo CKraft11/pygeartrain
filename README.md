@@ -19,19 +19,15 @@ Some examples of currently implemented gear trains:
 
 **Compound Planetary (High Ratio)**<br />
 ![alt text](compound_planetary.gif "Compound Planetary (High Ratio)")<br />
-`./compound_planetary.gif`
 
 **Compound Planetary (Printable Low Count)**<br />
 ![alt text](compound_planetary.png "Compound Planetary (Printable Low Count)")<br />
-`./compound_planetary.png`
 
 **Angular Contact Drive**<br />
 ![alt text](angular_contact.png "Angular Contact Drive")<br />
-`./angular_contact.png`
 
 **Cycloidal Drive**<br />
 ![alt text](cycloid.png "Cycloidal Drive")<br />
-`./cycloid.png`
 
 ## Installation & Environment Setup
 
@@ -134,7 +130,7 @@ A script is provided (let's assume you saved the one we developed as `generate_p
    ![alt text](solidworks_loft.png "Solidworks Loft Setup")
    *  Repeat steps for the Sun and Planet gears using their respective curve files.
    *  **For the Planet:** After creating the single lofted planet gear body, use the **Circular Pattern** feature (**Insert > Pattern/Mirror > Circular Pattern**) to create `N_planets` instances around the part origin.
-   *  **Carrier Path (Optional):** Import `carrier_path.txt` onto a sketch on the Front Plane (Z=0) using **Insert > Curve > Curve Through XYZ Points**. This doesnt create a perfect circle so you can create a circle on the XY plane and set it to have a point coincident to the carrier path curve. This circle can be used as a construction reference for designing the physical carrier or for assembly mates.
+   *  **Carrier Path (Optional):** Import `carrier_path.txt` onto a sketch on the Front Plane (Z=0) using **Insert > Curve > Curve Through XYZ Points**. Solidworks doesnt recognize this as a circle so you can create a circle on the XY plane and set it to have a point coincident to the carrier path curve. This circle can be used as a construction reference for designing the physical carrier or for assembly mates.
 
 ## Animation
 
