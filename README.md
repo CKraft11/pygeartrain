@@ -41,10 +41,9 @@ This project uses Conda for environment management.
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository_url> pygeartrain
+    git clone https://github.com/CKraft11/pygeartrain pygeartrain
     cd pygeartrain
     ```
-    (Replace `<repository_url>` with the actual URL of the repository. Alternatively, download and extract the source code).
 
 2.  **Create the Conda Environment:**
     Open your terminal or Anaconda Prompt in the `pygeartrain` directory (where `environment.yml` is located) and run:
